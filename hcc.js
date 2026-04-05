@@ -79,6 +79,14 @@ const VOL_STR   = 'Vol. XXXVIII, No. 14';
 const PRICE_STR = 'Print Edition · 75¢';
 
 function buildSite(activeHref) {
+  // Inject favicon
+  const _fav = document.createElement('link');
+  _fav.rel = 'icon'; _fav.type = 'image/svg+xml'; _fav.href = 'favicon.svg';
+  document.head.appendChild(_fav);
+  const _fav2 = document.createElement('link');
+  _fav2.rel = 'icon'; _fav2.type = 'image/png'; _fav2.href = 'favicon.png';
+  document.head.appendChild(_fav2);
+
   document.addEventListener('DOMContentLoaded', replaceImages);
   // TOP BAR
   document.body.insertAdjacentHTML('afterbegin', `
