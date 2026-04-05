@@ -1,3 +1,67 @@
+// ── Image seeds (picsum.photos/seed/N/W/H — always returns the same real photo)
+const IMG_SEEDS = {
+  '🌽':237,'🐄':582,'🐐':433,'⚾':116,'🌉':894,'🏛':665,'🏆':371,
+  '🌾':159,'🐝':428,'🚜':614,'🏃':339,'🎨':488,'📚':256,'🚌':199,
+  '🥎':747,'🎾':823,'🏋️':65,'✍️':412,'📬':503,'🏫':354,'🚒':791,
+  '🐒':101,'⛅':290,'🌤':291,'☀️':292,'🌧':293,'🌦':294,'💀':400,
+  '🏀':117,'⚽':118,'🎓':355,'📅':256,'🔥':791
+};
+
+function getSeed(emoji) {
+  if (!emoji) return 100;
+  const e = [...emoji.trim()][0];
+  if (IMG_SEEDS[e]) return IMG_SEEDS[e];
+  // fallback: use codepoint as seed
+  return (e.codePointAt(0) % 900) + 50;
+}
+
+function replaceImages() {
+  // Card placeholders in section pages
+  document.querySelectorAll('.card-img-placeholder').forEach(el => {
+    const emoji = el.textContent.trim();
+    const seed  = getSeed(emoji);
+    const img   = document.createElement('img');
+    img.src     = `https://picsum.photos/seed/${seed}/800/450`;
+    img.alt     = '';
+    img.className = 'card-img';
+    el.parentNode.replaceChild(img, el);
+  });
+
+  // Large article hero placeholders (class hero-ph)
+  document.querySelectorAll('.hero-ph').forEach(el => {
+    const emoji = el.textContent.trim();
+    const seed  = getSeed(emoji);
+    const img   = document.createElement('img');
+    img.src     = `https://picsum.photos/seed/${seed}/1200/675`;
+    img.alt     = '';
+    img.style.cssText = 'width:100%;display:block;border:1px solid #ddd;aspect-ratio:16/9;object-fit:cover;margin-bottom:0';
+    el.parentNode.replaceChild(img, el);
+  });
+
+  // Sidebar more-thumb cells (small thumbnails)
+  document.querySelectorAll('.more-thumb').forEach(el => {
+    if (el.querySelector('img')) return;
+    const emoji = el.textContent.trim();
+    const seed  = getSeed(emoji);
+    const img   = document.createElement('img');
+    img.src     = `https://picsum.photos/seed/${seed}/160/120`;
+    img.alt     = '';
+    img.style.cssText = 'width:100%;height:100%;object-fit:cover;';
+    el.innerHTML = '';
+    el.appendChild(img);
+  });
+
+  // Homepage inline weather / misc emoji blocks
+  document.querySelectorAll('[data-img]').forEach(el => {
+    const seed = parseInt(el.dataset.img, 10);
+    const img  = document.createElement('img');
+    img.src    = `https://picsum.photos/seed/${seed}/800/450`;
+    img.alt    = '';
+    img.style.cssText = 'width:100%;display:block;object-fit:cover;';
+    el.parentNode.replaceChild(img, el);
+  });
+}
+
 const NAV_ITEMS = [
   { label: 'Home',        href: 'news-home.html' },
   { label: 'Local',       href: 'local.html' },
@@ -15,6 +79,7 @@ const VOL_STR   = 'Vol. XXXVIII, No. 14';
 const PRICE_STR = 'Print Edition · 75¢';
 
 function buildSite(activeHref) {
+  document.addEventListener('DOMContentLoaded', replaceImages);
   // TOP BAR
   document.body.insertAdjacentHTML('afterbegin', `
     <div class="top-bar">
