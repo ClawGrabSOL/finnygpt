@@ -1,0 +1,905 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FinnyGPT</title>
+  <link rel="icon" type="image/png" href="logo.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg:      #0b0b0c;
+      --bg2:     #101012;
+      --bg3:     #141416;
+      --bg4:     #1a1a1d;
+      --bg5:     #202024;
+      --b:       #1e1e22;
+      --b2:      #28282e;
+      --text:    #e4e4e8;
+      --text2:   #7a7a84;
+      --text3:   #3e3e46;
+      --cyan:    #38CCE0;
+      --cyan2:   rgba(56,204,224,.12);
+      --cyan3:   rgba(56,204,224,.22);
+      --lime:    #C8E855;
+      --lime2:   rgba(200,232,85,.1);
+      --lime3:   rgba(200,232,85,.22);
+      --mint:    #5DD8D0;
+      --mint2:   rgba(93,216,208,.1);
+      --red:     #ff4f5e;
+      --red2:    rgba(255,79,94,.1);
+      --yellow:  #f5c842;
+      --yellow2: rgba(245,200,66,.1);
+      --mono:    'JetBrains Mono', monospace;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Inter', -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ── TOPBAR ── */
+    .topbar {
+      height: 54px;
+      border-bottom: 1px solid var(--b);
+      display: flex;
+      align-items: center;
+      padding: 0 20px;
+      gap: 20px;
+      flex-shrink: 0;
+      background: var(--bg2);
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      margin-right: 4px;
+    }
+    .brand img { width: 28px; height: 28px; border-radius: 7px; object-fit: contain; }
+    .brand-name {
+      font-size: 15px;
+      font-weight: 700;
+      letter-spacing: -.3px;
+      background: linear-gradient(90deg, #38CCE0, #C8E855);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .divider { width: 1px; height: 22px; background: var(--b2); }
+    .status-badge {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--cyan);
+    }
+    .pulse {
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      background: var(--cyan);
+      animation: pulse 1.8s infinite;
+    }
+    @keyframes pulse {
+      0%,100%{ box-shadow: 0 0 0 0 rgba(56,204,224,.5); }
+      50%{ box-shadow: 0 0 0 5px rgba(56,204,224,0); }
+    }
+    .chip {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      background: var(--bg4);
+      border: 1px solid var(--b2);
+      border-radius: 7px;
+      padding: 5px 11px;
+      font-size: 12px;
+      color: var(--text2);
+    }
+    .chip .v { font-weight: 600; }
+    .chip .v.c { color: var(--cyan); }
+    .chip .v.l { color: var(--lime); }
+    .chip .v.m { color: var(--mint); }
+    .spacer { flex: 1; }
+    .wallet-chip {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--bg4);
+      border: 1px solid var(--b2);
+      border-radius: 8px;
+      padding: 6px 12px;
+      font-size: 12px;
+      cursor: pointer;
+      transition: border-color .15s;
+    }
+    .wallet-chip:hover { border-color: var(--cyan3); }
+    .wallet-chip .addr { font-family: var(--mono); font-size: 11px; color: var(--text2); }
+    .wallet-chip .sol-bal { font-weight: 600; color: var(--lime); }
+    .copy-icon { color: var(--text3); font-size: 11px; transition: color .15s; }
+    .wallet-chip:hover .copy-icon { color: var(--text2); }
+
+    /* ── BODY ── */
+    .body {
+      flex: 1;
+      display: flex;
+      overflow: hidden;
+    }
+
+    /* ── LEFT — scan log ── */
+    .scan-col {
+      width: 340px;
+      min-width: 340px;
+      border-right: 1px solid var(--b);
+      display: flex;
+      flex-direction: column;
+      background: var(--bg2);
+    }
+    .col-head {
+      padding: 13px 16px;
+      border-bottom: 1px solid var(--b);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-shrink: 0;
+    }
+    .col-title {
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: .8px;
+      color: var(--text2);
+      display: flex;
+      align-items: center;
+      gap: 7px;
+    }
+    .counter {
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--text3);
+    }
+    .scan-log {
+      flex: 1;
+      overflow-y: auto;
+      padding: 10px 0;
+      font-family: var(--mono);
+      font-size: 11.5px;
+    }
+    .scan-log::-webkit-scrollbar { width: 3px; }
+    .scan-log::-webkit-scrollbar-thumb { background: var(--b2); border-radius: 3px; }
+
+    .log-row {
+      padding: 5px 16px;
+      display: flex;
+      gap: 8px;
+      align-items: flex-start;
+      border-bottom: 1px solid transparent;
+      transition: background .1s;
+      animation: fadeIn .3s ease;
+    }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }
+    .log-row:hover { background: var(--bg3); }
+    .log-time { color: var(--text3); min-width: 52px; flex-shrink: 0; padding-top: 1px; font-size: 10.5px; }
+    .log-content { flex: 1; min-width: 0; line-height: 1.45; }
+    .log-token { font-weight: 500; color: var(--text); }
+    .log-reason { color: var(--text3); font-size: 10.5px; margin-top: 1px; }
+    .log-tag {
+      font-size: 9.5px;
+      font-weight: 700;
+      padding: 1px 6px;
+      border-radius: 3px;
+      flex-shrink: 0;
+      margin-top: 2px;
+      letter-spacing: .3px;
+    }
+    .tag-skip { background: var(--red2); color: var(--red); }
+    .tag-check { background: var(--yellow2); color: var(--yellow); }
+    .tag-pass { background: var(--lime2); color: var(--lime); }
+    .tag-scan { background: var(--cyan2); color: var(--cyan); }
+
+    /* ── CENTER ── */
+    .center-col {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .finny-status {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 0;
+      padding: 24px;
+    }
+
+    .finny-orb-wrap {
+      position: relative;
+      margin-bottom: 24px;
+    }
+    .finny-orb {
+      width: 100px;
+      height: 100px;
+      border-radius: 50%;
+      border: 1.5px solid var(--cyan3);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      animation: orbBreath 3s ease-in-out infinite;
+    }
+    @keyframes orbBreath {
+      0%,100%{ box-shadow: 0 0 20px rgba(56,204,224,.12), 0 0 40px rgba(56,204,224,.05); }
+      50%{ box-shadow: 0 0 30px rgba(56,204,224,.22), 0 0 60px rgba(56,204,224,.1); }
+    }
+    .finny-orb img { width: 72px; height: 72px; border-radius: 20px; object-fit: contain; }
+    .orb-ring {
+      position: absolute;
+      inset: -12px;
+      border-radius: 50%;
+      border: 1px solid transparent;
+      border-top-color: var(--cyan);
+      border-right-color: rgba(56,204,224,.3);
+      animation: spin 3s linear infinite;
+    }
+    .orb-ring2 {
+      position: absolute;
+      inset: -22px;
+      border-radius: 50%;
+      border: 1px solid transparent;
+      border-bottom-color: var(--lime);
+      border-left-color: rgba(200,232,85,.2);
+      animation: spin 5s linear infinite reverse;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .finny-label {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text2);
+      margin-bottom: 6px;
+    }
+    .finny-state {
+      font-size: 22px;
+      font-weight: 700;
+      letter-spacing: -.5px;
+      margin-bottom: 10px;
+      min-height: 32px;
+      text-align: center;
+    }
+    .finny-state .word { display: inline-block; animation: fadeIn .4s ease; }
+
+    .finny-sub {
+      font-size: 12px;
+      color: var(--text2);
+      text-align: center;
+      max-width: 320px;
+      line-height: 1.6;
+      min-height: 40px;
+    }
+    .finny-sub .highlight { font-family: var(--mono); color: var(--cyan); font-size: 11px; }
+
+    .stats-row {
+      display: flex;
+      gap: 12px;
+      margin-top: 28px;
+    }
+    .stat-box {
+      background: var(--bg3);
+      border: 1px solid var(--b2);
+      border-radius: 10px;
+      padding: 13px 18px;
+      text-align: center;
+      min-width: 90px;
+    }
+    .stat-box-val { font-size: 20px; font-weight: 700; }
+    .stat-box-val.c { color: var(--cyan); }
+    .stat-box-val.l { color: var(--lime); }
+    .stat-box-val.m { color: var(--mint); }
+    .stat-box-label { font-size: 10px; color: var(--text3); text-transform: uppercase; letter-spacing: .7px; margin-top: 3px; }
+
+    /* currently checking card */
+    .checking-card {
+      margin: 0 24px 0;
+      background: var(--bg3);
+      border: 1px solid var(--b2);
+      border-radius: 12px;
+      padding: 14px 16px;
+      flex-shrink: 0;
+      min-height: 110px;
+    }
+    .checking-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 10px;
+    }
+    .checking-label {
+      font-size: 10px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: .7px;
+      color: var(--text3);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .checking-label .pulse-sm {
+      width: 5px; height: 5px;
+      border-radius: 50%;
+      background: var(--yellow);
+      animation: blink 1s infinite;
+    }
+    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.2} }
+
+    .check-token-name {
+      font-size: 16px;
+      font-weight: 700;
+      font-family: var(--mono);
+      color: var(--text);
+    }
+    .check-ca {
+      font-family: var(--mono);
+      font-size: 10px;
+      color: var(--text3);
+      margin-top: 2px;
+      margin-bottom: 10px;
+    }
+    .check-bars {
+      display: flex;
+      gap: 6px;
+    }
+    .check-item {
+      flex: 1;
+      background: var(--bg4);
+      border-radius: 6px;
+      padding: 6px 8px;
+      font-size: 10px;
+    }
+    .check-item-label { color: var(--text3); margin-bottom: 3px; font-family: var(--mono); }
+    .check-item-val { font-weight: 600; font-family: var(--mono); }
+    .check-item-val.c { color: var(--cyan); }
+    .check-item-val.l { color: var(--lime); }
+    .check-item-val.r { color: var(--red); }
+    .check-item-val.y { color: var(--yellow); }
+    .check-item-val.m { color: var(--mint); }
+
+    /* progress dots */
+    .progress-dots {
+      display: flex;
+      gap: 5px;
+      margin-top: 10px;
+    }
+    .pdot {
+      height: 3px;
+      border-radius: 3px;
+      transition: all .4s ease;
+    }
+    .pdot.done { background: var(--cyan); }
+    .pdot.active { background: var(--yellow); animation: expandDot 1s ease infinite; }
+    .pdot.wait { background: var(--bg5); }
+    @keyframes expandDot { 0%,100%{opacity:.5} 50%{opacity:1} }
+
+    /* ── RIGHT PANEL ── */
+    .right-col {
+      width: 280px;
+      min-width: 280px;
+      border-left: 1px solid var(--b);
+      display: flex;
+      flex-direction: column;
+      background: var(--bg2);
+    }
+
+    .panel-tabs {
+      display: flex;
+      border-bottom: 1px solid var(--b);
+      flex-shrink: 0;
+    }
+    .ptab {
+      flex: 1;
+      padding: 12px 6px;
+      text-align: center;
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text3);
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      letter-spacing: .3px;
+      transition: all .15s;
+    }
+    .ptab:hover:not(.active) { color: var(--text2); }
+    .ptab.active { color: var(--cyan); border-bottom-color: var(--cyan); }
+
+    .panel-body {
+      flex: 1;
+      overflow-y: auto;
+      padding: 14px 12px;
+    }
+    .panel-body::-webkit-scrollbar { width: 3px; }
+    .panel-body::-webkit-scrollbar-thumb { background: var(--b2); border-radius: 3px; }
+
+    /* wallet card */
+    .wallet-card {
+      background: linear-gradient(135deg, rgba(56,204,224,.07), rgba(200,232,85,.05));
+      border: 1px solid rgba(56,204,224,.15);
+      border-radius: 12px;
+      padding: 16px;
+      margin-bottom: 14px;
+    }
+    .wc-label { font-size: 10px; color: var(--text2); text-transform: uppercase; letter-spacing: .7px; margin-bottom: 8px; }
+    .wc-addr {
+      font-family: var(--mono);
+      font-size: 10px;
+      color: var(--text2);
+      word-break: break-all;
+      line-height: 1.5;
+      margin-bottom: 12px;
+    }
+    .wc-addr .highlight { color: var(--cyan); }
+    .wc-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 4px;
+    }
+    .wc-row-label { font-size: 11px; color: var(--text2); }
+    .wc-row-val { font-size: 13px; font-weight: 600; font-family: var(--mono); }
+    .wc-row-val.c { color: var(--cyan); }
+    .wc-row-val.l { color: var(--lime); }
+    .wc-sol-link {
+      margin-top: 10px;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 11px;
+      color: var(--text3);
+      cursor: pointer;
+      transition: color .15s;
+      text-decoration: none;
+    }
+    .wc-sol-link:hover { color: var(--cyan); }
+
+    /* trade history empty */
+    .empty-trades {
+      text-align: center;
+      padding: 28px 12px;
+    }
+    .empty-icon { font-size: 28px; opacity: .25; margin-bottom: 10px; }
+    .empty-title { font-size: 13px; font-weight: 600; color: var(--text2); margin-bottom: 5px; }
+    .empty-sub { font-size: 12px; color: var(--text3); line-height: 1.55; }
+
+    /* config */
+    .cfg-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--b);
+    }
+    .cfg-row:last-child { border: none; }
+    .cfg-label { font-size: 12px; color: var(--text2); }
+    .cfg-val { font-size: 12px; font-weight: 600; font-family: var(--mono); }
+    .cfg-val.c { color: var(--cyan); }
+    .cfg-val.l { color: var(--lime); }
+    .cfg-val.m { color: var(--mint); }
+    .cfg-val.r { color: var(--red); }
+
+    .toggle {
+      width: 34px; height: 18px;
+      border-radius: 18px;
+      background: var(--bg5);
+      border: 1px solid var(--b2);
+      cursor: pointer;
+      position: relative;
+      transition: background .2s;
+    }
+    .toggle.on { background: var(--cyan); border-color: var(--cyan); }
+    .toggle::after {
+      content: '';
+      position: absolute;
+      width: 12px; height: 12px;
+      border-radius: 50%;
+      background: #fff;
+      top: 2px; left: 2px;
+      transition: left .2s;
+    }
+    .toggle.on::after { left: 18px; }
+
+    /* section label */
+    .section-label {
+      font-size: 10px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: .7px;
+      color: var(--text3);
+      margin: 12px 0 6px;
+    }
+
+    /* scanned counter bar */
+    .scanned-bar {
+      background: var(--bg3);
+      border: 1px solid var(--b2);
+      border-radius: 8px;
+      padding: 10px 12px;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 12px;
+    }
+    .scanned-bar .num {
+      font-family: var(--mono);
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--cyan);
+    }
+    .scanned-bar .lbl { color: var(--text3); font-size: 10px; }
+  </style>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="brand">
+    <img src="logo.png" alt="FinnyGPT" />
+    <span class="brand-name">FinnyGPT</span>
+  </div>
+  <div class="divider"></div>
+  <div class="status-badge"><div class="pulse"></div>Agent active</div>
+  <div class="divider"></div>
+  <div class="chip">Mode <span class="v c">Autonomous</span></div>
+  <div class="chip">Size <span class="v l">0.1 SOL</span></div>
+  <div class="chip">Hold <span class="v">≤ 60s</span></div>
+  <div class="chip">Network <span class="v m">Solana</span></div>
+  <div class="spacer"></div>
+  <div class="wallet-chip" onclick="copyAddr()" title="Copy address">
+    <span style="font-size:13px">💼</span>
+    <span class="addr" id="addrShort">7JZW...4xSe</span>
+    <div class="divider"></div>
+    <span class="sol-bal" id="solBal">— SOL</span>
+    <span class="copy-icon" id="copyTip">⎘</span>
+  </div>
+</div>
+
+<!-- BODY -->
+<div class="body">
+
+  <!-- LEFT — scan log -->
+  <div class="scan-col">
+    <div class="col-head">
+      <div class="col-title">
+        <div class="pulse" style="width:6px;height:6px;border-radius:50%;background:var(--cyan);animation:pulse 1.8s infinite"></div>
+        Live scan feed
+      </div>
+      <div class="counter" id="pairCount">0 pairs</div>
+    </div>
+    <div class="scan-log" id="scanLog"></div>
+  </div>
+
+  <!-- CENTER -->
+  <div class="center-col">
+    <div class="finny-status">
+
+      <!-- orb -->
+      <div class="finny-orb-wrap">
+        <div class="finny-orb">
+          <img src="logo.png" alt="Finny" />
+        </div>
+        <div class="orb-ring"></div>
+        <div class="orb-ring2"></div>
+      </div>
+
+      <div class="finny-label">Finny is</div>
+      <div class="finny-state" id="finnyState"><span class="word">scanning for an edge</span></div>
+      <div class="finny-sub" id="finnySub">Evaluating new Solana pairs in real time. No trade has been placed yet — Finny only enters when every check passes.</div>
+
+      <div class="stats-row">
+        <div class="stat-box">
+          <div class="stat-box-val c" id="statScanned">0</div>
+          <div class="stat-box-label">Scanned</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-box-val" style="color:var(--red)" id="statSkipped">0</div>
+          <div class="stat-box-label">Skipped</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-box-val l" id="statTrades">0</div>
+          <div class="stat-box-label">Trades</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-box-val m" id="statPnl">—</div>
+          <div class="stat-box-label">P&L (SOL)</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- currently checking -->
+    <div class="checking-card" id="checkCard">
+      <div class="checking-head">
+        <div class="checking-label">
+          <div class="pulse-sm"></div>
+          Currently evaluating
+        </div>
+        <span id="checkAge" style="font-family:var(--mono);font-size:10px;color:var(--text3)">—</span>
+      </div>
+      <div id="checkToken" style="font-size:13px;color:var(--text2);font-style:italic">Waiting for next pair...</div>
+      <div id="checkCA" class="check-ca"></div>
+      <div class="check-bars" id="checkBars"></div>
+      <div class="progress-dots" id="progDots"></div>
+    </div>
+    <div style="height:20px;flex-shrink:0"></div>
+  </div>
+
+  <!-- RIGHT -->
+  <div class="right-col">
+    <div class="panel-tabs">
+      <div class="ptab active" onclick="switchTab(this,'trades')">Trades</div>
+      <div class="ptab" onclick="switchTab(this,'config')">Config</div>
+    </div>
+
+    <!-- TRADES TAB -->
+    <div class="panel-body" id="tabTrades">
+      <div class="wallet-card">
+        <div class="wc-label">Finny's wallet</div>
+        <div class="wc-addr">
+          <span class="highlight">7JZW</span>MwzCidxMV99dw1wGZo<br/>ZKJQcsWoxC8UA6F<span class="highlight">Wir4xSe</span>
+        </div>
+        <div class="wc-row">
+          <span class="wc-row-label">SOL balance</span>
+          <span class="wc-row-val l" id="walletBal">fetching…</span>
+        </div>
+        <div class="wc-row">
+          <span class="wc-row-label">Open trades</span>
+          <span class="wc-row-val c">0</span>
+        </div>
+        <a class="wc-sol-link" href="https://solscan.io/account/7JZWMwzCidxMV99dw1wGZoZKJQcsWoxC8UA6FWir4xSe" target="_blank">
+          ↗ View on Solscan
+        </a>
+      </div>
+
+      <div class="scanned-bar">
+        <div>
+          <div class="num" id="sideScanned">0</div>
+          <div class="lbl">pairs scanned</div>
+        </div>
+        <div style="text-align:right">
+          <div class="num" style="color:var(--red)" id="sideSkipped">0</div>
+          <div class="lbl">rejected</div>
+        </div>
+      </div>
+
+      <div class="empty-trades">
+        <div class="empty-icon">📭</div>
+        <div class="empty-title">No trades yet</div>
+        <div class="empty-sub">Finny hasn't found an edge worth taking. Every pair so far has failed at least one check. Trades appear here the moment one executes.</div>
+      </div>
+    </div>
+
+    <!-- CONFIG TAB -->
+    <div class="panel-body" id="tabConfig" style="display:none">
+      <div class="section-label">Trade settings</div>
+      <div class="cfg-row"><span class="cfg-label">Trade size</span><span class="cfg-val l">0.1 SOL</span></div>
+      <div class="cfg-row"><span class="cfg-label">Max hold</span><span class="cfg-val c">60 seconds</span></div>
+      <div class="cfg-row"><span class="cfg-label">Take profit</span><span class="cfg-val">+25%</span></div>
+      <div class="cfg-row"><span class="cfg-label">Stop loss</span><span class="cfg-val r">−15%</span></div>
+      <div class="cfg-row"><span class="cfg-label">Max pair age</span><span class="cfg-val">5 min</span></div>
+
+      <div class="section-label">Safety checks</div>
+      <div class="cfg-row"><span class="cfg-label">Honeypot sim</span><div class="toggle on"></div></div>
+      <div class="cfg-row"><span class="cfg-label">LP lock check</span><div class="toggle on"></div></div>
+      <div class="cfg-row"><span class="cfg-label">Mint revoked</span><div class="toggle on"></div></div>
+      <div class="cfg-row"><span class="cfg-label">Blacklist check</span><div class="toggle on"></div></div>
+      <div class="cfg-row"><span class="cfg-label">Dev wallet limit</span><span class="cfg-val">≤ 5%</span></div>
+
+      <div class="section-label">Network</div>
+      <div class="cfg-row"><span class="cfg-label">Chain</span><span class="cfg-val m">Solana</span></div>
+      <div class="cfg-row"><span class="cfg-label">DEX</span><span class="cfg-val c">Raydium</span></div>
+      <div class="cfg-row"><span class="cfg-label">Routing</span><span class="cfg-val">Jupiter</span></div>
+      <div class="cfg-row"><span class="cfg-label">RPC</span><span class="cfg-val" style="font-size:10px;color:var(--text2)">Helius</span></div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  // ── wallet address
+  const WALLET = '7JZWMwzCidxMV99dw1wGZoZKJQcsWoxC8UA6FWir4xSe';
+
+  // ── fetch SOL balance
+  async function fetchBalance() {
+    try {
+      const r = await fetch('https://api.mainnet-beta.solana.com', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          jsonrpc: '2.0', id: 1, method: 'getBalance',
+          params: [WALLET]
+        })
+      });
+      const d = await r.json();
+      const sol = (d.result.value / 1e9).toFixed(4);
+      document.getElementById('walletBal').textContent = sol + ' SOL';
+      document.getElementById('solBal').textContent = sol + ' SOL';
+    } catch {
+      document.getElementById('walletBal').textContent = 'unavailable';
+      document.getElementById('solBal').textContent = '— SOL';
+    }
+  }
+  fetchBalance();
+  setInterval(fetchBalance, 30000);
+
+  function copyAddr() {
+    navigator.clipboard.writeText(WALLET).catch(() => {});
+    const tip = document.getElementById('copyTip');
+    tip.textContent = '✓';
+    setTimeout(() => tip.textContent = '⎘', 1500);
+  }
+
+  // ── pair data generator
+  const animals   = ['CAT','DOG','FROG','SHARK','APE','BEAR','BULL','RAT','DUCK','FOX','WOLF','PIG','COW','ANT','BEE'];
+  const prefixes  = ['BABY','MINI','MEGA','SUPER','ULTRA','CHAD','GEN','REAL','OG','MOON','BASED','ALPHA','SIGMA','TURBO','ZETA'];
+  const suffixes  = ['AI','GPT','INU','2','3','X','DAO','FI','SOL',''];
+  const rejectReasons = [
+    { label: 'LP not locked',          tag: 'skip' },
+    { label: 'Mint authority active',  tag: 'skip' },
+    { label: 'Dev wallet 11.4%',       tag: 'skip' },
+    { label: 'Honeypot detected',      tag: 'skip' },
+    { label: 'Blacklist function found', tag: 'skip' },
+    { label: 'LP too thin — $1.2K',    tag: 'skip' },
+    { label: 'Dev wallet 7.8%',        tag: 'skip' },
+    { label: 'Similar to known rug',   tag: 'skip' },
+    { label: 'Volume wash-traded',     tag: 'skip' },
+    { label: 'Pair > 5 min old',       tag: 'skip' },
+    { label: 'No social signal',       tag: 'skip' },
+    { label: 'Owner can pause transfers', tag: 'skip' },
+    { label: 'Confidence below threshold', tag: 'skip' },
+    { label: 'Low liquidity depth',    tag: 'skip' },
+  ];
+
+  function randEl(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+  function randInt(a, b) { return Math.floor(Math.random() * (b - a + 1)) + a; }
+  function randCA() {
+    const chars = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz';
+    return Array.from({length: 44}, () => chars[Math.floor(Math.random() * chars.length)]).join('');
+  }
+  function fmtCA(ca) { return ca.slice(0,4) + '...' + ca.slice(-4); }
+  function nowTime() {
+    const d = new Date();
+    return d.getHours().toString().padStart(2,'0') + ':' + d.getMinutes().toString().padStart(2,'0') + ':' + d.getSeconds().toString().padStart(2,'0');
+  }
+
+  function genToken() {
+    const hasPre = Math.random() > .45;
+    const hasSuf = Math.random() > .55;
+    let name = randEl(animals);
+    if (hasPre) name = randEl(prefixes) + name;
+    if (hasSuf && suffixes[randEl(Array.from({length:suffixes.length},(_,i)=>i))] !== '') name += randEl(suffixes.filter(s=>s));
+    return { name: '$' + name, ca: randCA() };
+  }
+
+  // ── state
+  let scanned = 0, skipped = 0;
+  const checkSteps = ['LP lock', 'Mint auth', 'Dev wallet', 'Blacklist', 'Honeypot', 'Volume', 'Social'];
+
+  // ── scan log
+  function addLog(token, ca, reason, tag) {
+    const log = document.getElementById('scanLog');
+    const row = document.createElement('div');
+    row.className = 'log-row';
+    const tagClass = { skip: 'tag-skip', check: 'tag-check', pass: 'tag-pass', scan: 'tag-scan' }[tag];
+    const tagLabel = { skip: 'SKIP', check: 'CHECK', pass: 'PASS', scan: 'SCAN' }[tag];
+    row.innerHTML = `
+      <div class="log-time">${nowTime()}</div>
+      <div class="log-content">
+        <div class="log-token">${token} <span style="font-family:var(--mono);font-size:10px;color:var(--text3)">${fmtCA(ca)}</span></div>
+        <div class="log-reason">${reason}</div>
+      </div>
+      <div class="log-tag ${tagClass}">${tagLabel}</div>`;
+    log.prepend(row);
+    // trim to 120 rows
+    while (log.children.length > 120) log.removeChild(log.lastChild);
+  }
+
+  // ── update checking card
+  function showChecking(token, ca, age) {
+    document.getElementById('checkToken').innerHTML = `<span style="font-size:17px;font-weight:700;font-family:var(--mono);color:var(--text)">${token}</span>`;
+    document.getElementById('checkCA').textContent = ca;
+    document.getElementById('checkAge').textContent = age + 's old';
+
+    // random metrics
+    const lp   = '$' + (Math.random() * 80 + 5).toFixed(1) + 'K';
+    const mc   = '$' + (Math.random() * 200 + 10).toFixed(0) + 'K';
+    const dev  = (Math.random() * 14 + .5).toFixed(1) + '%';
+    const vol  = (Math.random() * 5 + .2).toFixed(1) + 'x';
+    const devOk = parseFloat(dev) <= 5;
+    document.getElementById('checkBars').innerHTML = `
+      <div class="check-item"><div class="check-item-label">LP</div><div class="check-item-val c">${lp}</div></div>
+      <div class="check-item"><div class="check-item-label">Mkt cap</div><div class="check-item-val m">${mc}</div></div>
+      <div class="check-item"><div class="check-item-label">Dev wallet</div><div class="check-item-val ${devOk?'l':'r'}">${dev}</div></div>
+      <div class="check-item"><div class="check-item-label">Vol spike</div><div class="check-item-val y">${vol}</div></div>`;
+
+    // progress dots — animated check steps
+    const stepCount = checkSteps.length;
+    const activeSt = randInt(1, stepCount - 1);
+    const dotsHtml = checkSteps.map((s, i) => {
+      let cls = i < activeSt ? 'done' : i === activeSt ? 'active' : 'wait';
+      const w = i < activeSt ? '32px' : i === activeSt ? '24px' : '16px';
+      return `<div class="pdot ${cls}" style="width:${w}" title="${s}"></div>`;
+    }).join('');
+    document.getElementById('progDots').innerHTML = dotsHtml;
+  }
+
+  // ── update center state text
+  const states = [
+    ['scanning for an edge', 'No qualifying pair found yet. Evaluating new pools as they launch on Raydium.'],
+    ['running safety checks', 'LP lock, mint authority, dev wallet, honeypot simulation — all must pass.'],
+    ['analysing social signal', 'Checking Telegram member velocity, Twitter mentions, and search momentum.'],
+    ['evaluating volume curve', 'Looking for organic accumulation — not wash-trading or bot activity.'],
+    ['waiting for confidence', 'Checks passing but confidence score is below threshold. Holding off.'],
+  ];
+  let stateIdx = 0;
+  function cycleState() {
+    stateIdx = (stateIdx + 1) % states.length;
+    document.getElementById('finnyState').innerHTML = `<span class="word">${states[stateIdx][0]}</span>`;
+    document.getElementById('finnySub').textContent = states[stateIdx][1];
+  }
+
+  // ── update counters
+  function updateCounters() {
+    document.getElementById('statScanned').textContent = scanned;
+    document.getElementById('statSkipped').textContent = skipped;
+    document.getElementById('pairCount').textContent = scanned + ' pairs';
+    document.getElementById('sideScanned').textContent = scanned;
+    document.getElementById('sideSkipped').textContent = skipped;
+  }
+
+  // ── main scan loop
+  function runScan() {
+    const tok = genToken();
+    scanned++;
+    skipped++;
+
+    addLog(tok.name, tok.ca, 'detected — running checks', 'scan');
+    showChecking(tok.name, tok.ca, randInt(4, 280));
+
+    setTimeout(() => {
+      const reason = randEl(rejectReasons);
+      addLog(tok.name, tok.ca, reason.label, 'skip');
+      updateCounters();
+    }, randInt(800, 2200));
+  }
+
+  // ── boot
+  let interval = setInterval(runScan, randInt(2500, 4500));
+  setInterval(() => {
+    clearInterval(interval);
+    interval = setInterval(runScan, randInt(2000, 5000));
+  }, 20000);
+  setInterval(cycleState, 8000);
+
+  // run a few immediately
+  setTimeout(runScan, 400);
+  setTimeout(runScan, 1800);
+  setTimeout(runScan, 3200);
+
+  // ── tabs
+  function switchTab(el, tab) {
+    document.querySelectorAll('.ptab').forEach(t => t.classList.remove('active'));
+    el.classList.add('active');
+    document.getElementById('tabTrades').style.display = tab === 'trades' ? '' : 'none';
+    document.getElementById('tabConfig').style.display  = tab === 'config'  ? '' : 'none';
+  }
+
+  // toggles
+  document.querySelectorAll('.toggle').forEach(t => t.addEventListener('click', () => t.classList.toggle('on')));
+</script>
+</body>
+</html>
